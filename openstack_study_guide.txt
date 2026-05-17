@@ -1,0 +1,174 @@
+WEEK 7 — OpenStack Appliance Setup & Access
+
+Import OVA into VirtualBox Command: File → Import Appliance Imports the
+pre-built OpenStack VM into VirtualBox. This loads the full cloud
+environment as a ready-to-run image.
+
+Verify VM Resources Command: Check RAM = 16384 MB and CPU = 4 Ensures
+the VM has enough resources to run OpenStack properly. Insufficient
+allocation will cause Horizon and services to fail.
+
+Start Virtual Machine Command: Start OpenStack-Lab VM Boots the
+OpenStack environment inside VirtualBox. This launches all cloud
+services needed for Horizon access.
+
+Check IP Address inside VM Command: ip a Displays network interfaces and
+assigned IP addresses. Used to find the Horizon access IP on the
+host-only adapter.
+
+Ping OpenStack VM from Host Command: ping -c 4 Tests connectivity
+between host and OpenStack VM. Confirms host-only networking is
+correctly configured.
+
+SSH into OpenStack VM Command: ssh student@ Opens secure remote shell
+into the OpenStack controller VM. Used for CLI-based cloud management
+and verification.
+
+Load OpenStack Credentials Command: source admin-openrc Loads admin
+authentication variables into the shell session. Required before running
+any OpenStack CLI commands.
+
+Check Compute Services Command: openstack compute service list Displays
+Nova compute services and their status. Used to verify if compute nodes
+are active and running.
+
+Check Network Agents Command: openstack network agent list Shows Neutron
+agents responsible for networking functions. Used to confirm DHCP, L3,
+and metadata services are running.
+
+View OpenStack API Endpoints Command: openstack endpoint list Lists all
+available OpenStack service APIs. Confirms identity and service catalog
+is correctly registered.
+
+Check Hypervisors Command: openstack hypervisor list Displays compute
+nodes hosting virtual machines. Used to verify virtualization layer is
+active.
+
+WEEK 8 — Identity, Images & Networking
+
+Create Project Command: openstack project create lab8_project Creates a
+new tenant/project for isolating resources. Used to separate users and
+workloads in OpenStack.
+
+Create User Command: openstack user create –password secret lab_student
+Creates a new OpenStack user account. Allows authentication and resource
+access within a project.
+
+Assign Role to User Command: openstack role add –project lab8_project
+–user lab_student member Grants permissions to a user inside a project.
+Defines what actions the user is allowed to perform.
+
+Download Image (Cirros) Command: wget
+http://download.cirros-cloud.net/0.5.1/cirros.img Downloads a
+lightweight Linux image for testing. Used as a bootable OS template for
+instances.
+
+Upload Image to Glance Command: openstack image create “cirros-lab8”
+–file cirros.img –disk-format qcow2 –container-format bare –public
+Uploads OS image into OpenStack image service. Makes the image available
+for launching virtual machines.
+
+Create Network Command: openstack network create lab8_net Creates a
+virtual network (layer 2 switch). Used to connect instances internally.
+
+Create Subnet Command: openstack subnet create –network lab8_net
+–subnet-range 192.168.88.0/24 Defines IP address range for the network.
+Enables DHCP and internal IP allocation.
+
+Create Router Command: openstack router create lab8_router Creates a
+virtual router for network traffic routing. Connects private networks to
+external networks.
+
+Attach Subnet to Router Command: openstack router add subnet lab8_router
+lab8_subnet Connects internal network to the router. Enables
+communication between subnet and external networks.
+
+Set External Gateway Command: openstack router set –external-gateway
+public lab8_router Connects router to external/public network. Allows
+instances to access the internet.
+
+WEEK 9 — Compute & Security
+
+Create Flavor Command: openstack flavor create m1.nebula_micro –ram 256
+–disk 1 –vcpus 1 Defines virtual machine hardware specifications.
+Controls CPU, RAM, and disk size for instances.
+
+Create SSH Key Pair Command: openstack keypair create nebula_key >
+nebula_key.pem Generates SSH authentication key pair. Used for secure
+login into instances.
+
+Create Security Group Command: openstack security group create
+nebula_web_sg Creates firewall rules container for instances. Controls
+inbound and outbound network traffic.
+
+Add SSH Rule Command: openstack security group rule create –proto tcp
+–dst-port 22 nebula_web_sg Allows SSH access into instances. Enables
+remote login over port 22.
+
+Add HTTP Rule Command: openstack security group rule create –proto tcp
+–dst-port 80 nebula_web_sg Allows web traffic to reach instances.
+Enables HTTP access on port 80.
+
+Launch Instance Command: openstack server create –flavor m1.nebula_micro
+–image cirros –network lab8_net nebula_web_01 Boots a virtual machine in
+OpenStack. Combines image, network, and compute resources.
+
+Create Floating IP Command: openstack floating ip create public
+Allocates a public IP address. Used to access private instances
+externally.
+
+Assign Floating IP Command: openstack server add floating ip
+nebula_web_01 Links public IP to a running instance. Enables external
+access via SSH or browser.
+
+SSH into Instance Command: ssh -i nebula_key.pem cirros@ Connects to
+instance using private SSH key. Provides secure shell access to VM.
+
+WEEK 9 OPS — Management & Troubleshooting
+
+Show Instance Details Command: openstack server show nebula_web_01
+Displays detailed VM metadata and host info. Used to identify hypervisor
+and configuration.
+
+View Console Log Command: openstack console log show nebula_web_01 Shows
+boot output of a virtual machine. Used for debugging startup or network
+issues.
+
+Resize Instance Command: openstack server resize nebula_web_01 –flavor
+m1.nebula_small Changes VM hardware resources. Allows scaling CPU/RAM
+upward or downward.
+
+Confirm Resize Command: openstack server resize confirm nebula_web_01
+Finalizes new VM size after resize operation. Commits changes
+permanently.
+
+Pause Instance Command: openstack server pause nebula_web_01 Freezes VM
+execution in memory. Stops CPU without shutting down system.
+
+Suspend Instance Command: openstack server suspend nebula_web_01 Saves
+VM state to disk and powers off. Allows full restoration later.
+
+Delete Instance Command: openstack server delete nebula_web_01 Removes
+VM from OpenStack environment. Frees compute resources.
+
+WEEK 10 — Storage (Cinder)
+
+Create Volume (GUI) Command: Project → Volumes → Create Volume Creates
+persistent block storage disk. Used to store data independent of VM
+lifecycle.
+
+Attach Volume Command: Attach data-vol-1 to vm-A Connects storage disk
+to a running instance. Makes disk accessible inside VM.
+
+Format Disk Command: mkfs.ext4 /dev/vdb Initializes filesystem on raw
+block device. Prepares volume for data storage.
+
+Mount Volume Command: mount /dev/vdb /cinder-data Attaches filesystem
+into Linux directory. Allows file read/write operations.
+
+Unmount Volume Command: umount /cinder-data Detaches filesystem safely
+from OS. Required before moving storage between VMs.
+
+Attach Volume to New VM Command: Attach data-vol-1 to vm-B Moves
+persistent storage between instances. Data remains intact after
+migration.
